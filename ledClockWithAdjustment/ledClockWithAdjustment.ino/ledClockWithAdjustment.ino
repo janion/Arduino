@@ -170,7 +170,7 @@ void setAlarmPoll() {
   if (abs(millis() - lastFlashMillis) > 500) {
     if (isOn) {
       matrix.clear();
-      matrix.writeDisplay();
+      showColon(true);
       lastFlashMillis = millis();
       isOn = false;
     } else {
@@ -195,6 +195,10 @@ void updateState() {
 
 void showTime(int hoursToShow, int minutesToShow, boolean colonToShow) {
     showTime(hoursToShow, minutesToShow);
+    showColon(colonToShow);
+}
+
+void showColon(boolean colonToShow) {
     matrix.drawColon(colonToShow);
     matrix.writeDisplay();
 }
@@ -243,4 +247,3 @@ void setBrighter() {
     brightnessCount = 0;
   }
 }
-
