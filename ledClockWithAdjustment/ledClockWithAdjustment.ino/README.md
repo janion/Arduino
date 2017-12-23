@@ -10,4 +10,3 @@ To do:
 - Add buzzer for end of alarm
 - Add snooze button
 - Add on/off button/switch
-- Make time set set time on RTC
