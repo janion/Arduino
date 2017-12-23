@@ -125,7 +125,8 @@ void setTimePoll() {
   
   DateTime now = rtc.now();
   // Set time on RTC
-//  rtc.adjust(DateTime(now.year(), now.month(), now.day(), hours, minutes, now.second()));
+  rtc.adjust(DateTime(now.year(), now.month(), now.day(), hours, minutes, now.second()));
+  setTime(hours, minutes, now.second(), now.day(), now.month(), now.year());
 
   if (abs(millis() - lastFlashMillis) > 500) {
     if (isOn) {
