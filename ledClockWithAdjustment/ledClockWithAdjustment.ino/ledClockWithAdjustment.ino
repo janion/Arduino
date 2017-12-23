@@ -67,9 +67,8 @@ void setup() {
 
   alarmHour = EEPROM.read(0);
   alarmMinute = EEPROM.read(1);
-
-  // Alarm
-  alarmId = Alarm.alarmRepeat(alarmHour, alarmMinute, alarmSecond, turnOnRed);
+  
+  setAlarmTime();
 
   // Mode change Button
   attachInterrupt(digitalPinToInterrupt(MODE_PIN), changeMode, RISING);
@@ -151,20 +150,16 @@ void setAlarmPoll() {
 
   if (minuteButtonDown) {
     alarmMinute = (++alarmMinute) % 60;
-    showTime(alarmHour, alarmMinute);
+    setAlarmTime();
+    showTime(alarmHour, alarmMinute, true);
     lastFlashMillis = millis();
-    // Set alarm
-    Alarm.free(alarmId);
-    alarmId = Alarm.alarmRepeat(alarmHour, alarmMinute, alarmSecond, turnOnRed);
   }
 
   if (hourButtonDown) {
     alarmHour = (++alarmHour) % 24;
-    showTime(alarmHour, alarmMinute);
+    setAlarmTime();
+    showTime(alarmHour, alarmMinute, true);
     lastFlashMillis = millis();
-    // Set alarm
-    Alarm.free(alarmId);
-    alarmId = Alarm.alarmRepeat(alarmHour, alarmMinute, alarmSecond, turnOnRed);
   }
 
   if (abs(millis() - lastFlashMillis) > 500) {
@@ -179,6 +174,23 @@ void setAlarmPoll() {
       isOn = true;
     }
   }
+}
+
+void setAlarmTime() {
+  int hoursForAlarm = alarmHour;
+  int minutesForAlarm = alarmMinute - 30;
+
+  if (minutesForAlarm < 0) {
+    minutesForAlarm += 60;
+    hoursForAlarm--;
+  }
+
+  if (hoursForAlarm < 0) {
+    hoursForAlarm += 24;
+  }
+  
+  Alarm.free(alarmId);
+  alarmId = Alarm.alarmRepeat(hoursForAlarm, minutesForAlarm, alarmSecond, turnOnRed);
 }
 
 void updateState() {
