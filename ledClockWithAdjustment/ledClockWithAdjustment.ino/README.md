@@ -1,8 +1,14 @@
 # LED Clock
 
+Uses libraries:
+- [RCTLib](https://github.com/adafruit/RTClib)
+- [TimeLib](https://github.com/PaulStoffregen/Time)
+- [TimeAlarms](https://github.com/PaulStoffregen/TimeAlarms)
+- [IRLib2](https://github.com/cyborg5/IRLib2)
+- [Adafruit_LEDBackpack](https://github.com/adafruit/Adafruit_LED_Backpack)
+
 To do:
 - Add buzzer for end of alarm
 - Add snooze button
 - Add on/off button/switch
-- Make it so alarm time set is time of buzzer not time of first light
 - Make time set set time on RTC
