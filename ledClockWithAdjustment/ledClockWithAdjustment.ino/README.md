@@ -8,12 +8,11 @@ Required hardware:
 - 3x momentary push buttons (with 10Kohm resistor each)
 
 Uses libraries:
-- [RCTLib](https://github.com/adafruit/RTClib)
+- [RCTLib](https://github.com/adafruit/RTClib) (Edited to use TIMER1 instead of TIMER2 as the tone function used TIMER2)
 - [TimeAlarms](https://github.com/PaulStoffregen/TimeAlarms) (& [TimeLib](https://github.com/PaulStoffregen/Time))
 - [IRLib2](https://github.com/cyborg5/IRLib2)
 - [Adafruit_LEDBackpack](https://github.com/adafruit/Adafruit_LED_Backpack) (& [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library))
 
 To do:
-- Add buzzer for end of alarm
 - Add snooze button
 - Add on/off button/switch
