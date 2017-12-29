@@ -100,12 +100,11 @@ void loop() {
 
 void showTimePoll() {
   static boolean colon;
-  DateTime now = rtc.now();
 
-  if (now.second() != seconds) {
-    hours = now.hour();
-    minutes = now.minute();
-    seconds = now.second();
+  if (second() != seconds) {
+    hours = hour();
+    minutes = minute();
+    seconds = second();
     
     showTime(hours, minutes, colon);
     colon = !colon;
@@ -131,10 +130,9 @@ void setTimePoll() {
     lastFlashMillis = millis();
   }
   
-  DateTime now = rtc.now();
   // Set time on RTC
-  rtc.adjust(DateTime(now.year(), now.month(), now.day(), hours, minutes, now.second()));
-  setTime(hours, minutes, now.second(), now.day(), now.month(), now.year());
+  rtc.adjust(DateTime(year(), month(), day(), hours, minutes, second()));
+  setTime(hours, minutes, second(), day(), month(), year());
 
   if (abs(millis() - lastFlashMillis) > 500) {
     if (isOn) {
