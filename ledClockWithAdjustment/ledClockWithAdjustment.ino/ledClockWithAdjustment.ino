@@ -20,11 +20,19 @@ enum State {
 boolean stateChanged = false;
 
 const int MODE_PIN = 2;
-const int MINUTE_ADJUSTMENT_PIN = 5;
 const int HOUR_ADJUSTMENT_PIN = 4;
+const int MINUTE_ADJUSTMENT_PIN = 5;
+const int BUZZER = 6;
 
 // 3 minutes
 const int secondsBetweenIncrements = 60 * 3;
+
+// Beep constants
+const double beepDuration = 100; // ms
+const double beepGap = 100; // ms
+const double beepSeparation = 1; // s
+const int alarmRepeats = 10; //90; // ~s
+const int beepFrequency = 2000; // Hz
 
 // Alarm time
 unsigned int alarmHour = 0;
@@ -258,5 +266,20 @@ void setBrighter() {
     irTransmitter.send(NEC, 0xff3ac5, 0);
   } else {
     brightnessCount = 0;
+    Alarm.timerOnce(secondsBetweenIncrements, beep);
+  }
+}
+
+void beep() {
+  static int count = 0;
+  if (count++ < alarmRepeats) {
+    Alarm.timerOnce(beepSeparation, beep); 
+    // Turn on
+    tone(BUZZER, beepFrequency, beepDuration);
+    Alarm.delay(beepDuration);
+    Alarm.delay(beepGap);
+    tone(BUZZER, beepFrequency, beepDuration);
+  } else {
+    count = 0;
   }
 }
