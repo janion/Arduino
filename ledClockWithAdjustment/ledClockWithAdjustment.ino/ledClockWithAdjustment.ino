@@ -13,16 +13,18 @@
 
 enum State {
   SHOW_TIME,
-  SET_TIME,
-  SET_ALARM
+  SET_TIME_HOUR,
+  SET_TIME_MINUTE,
+  SET_ALARM_HOUR,
+  SET_ALARM_MINUTE
 };
 
 boolean stateChanged = false;
 
 const int MODE_PIN = 2;
-const int HOUR_ADJUSTMENT_PIN = 4;
-const int MINUTE_ADJUSTMENT_PIN = 5;
-const int BUZZER = 6;
+const int SNOOZE_PIN = 3;
+const int TIME_ADJUSTMENT_PIN = 4;
+const int BUZZER = 5;
 
 // 3 minutes
 const int secondsBetweenIncrements = 60 * 3;
@@ -39,6 +41,8 @@ unsigned int alarmHour = 0;
 unsigned int alarmMinute = 0;
 unsigned int alarmSecond = 0;
 
+boolean isSnoozPressed = false;
+
 // Current time
 unsigned int hours;
 unsigned int minutes;
@@ -53,8 +57,8 @@ State state = SHOW_TIME;
 
 void setup() {
   pinMode(13, OUTPUT);
-  pinMode(HOUR_ADJUSTMENT_PIN, INPUT);
-  pinMode(MINUTE_ADJUSTMENT_PIN, INPUT);
+  pinMode(TIME_ADJUSTMENT_PIN, INPUT);
+  pinMode(SNOOZE_PIN, INPUT);
 
   matrix.begin(0x70);
   matrix.setBrightness(0);
@@ -78,8 +82,10 @@ void setup() {
   
   setAlarmTime();
 
-  // Mode change Button
+  // Mode change button
   attachInterrupt(digitalPinToInterrupt(MODE_PIN), changeMode, RISING);
+  // Snooze Button
+  attachInterrupt(digitalPinToInterrupt(SNOOZE_PIN), snooze, RISING);
 }
 
 void loop() {
@@ -90,9 +96,9 @@ void loop() {
   
   if (state == SHOW_TIME) {
     showTimePoll();
-  } else if (state == SET_TIME) {
+  } else if (state == SET_TIME_HOUR || state == SET_TIME_MINUTE) {
     setTimePoll();
-  } else if (state == SET_ALARM) {
+  } else if (state == SET_ALARM_HOUR || state == SET_ALARM_MINUTE) {
     setAlarmPoll();
   }
   Alarm.delay(1);
@@ -114,30 +120,30 @@ void showTimePoll() {
 void setTimePoll() {
   static long lastFlashMillis = millis();
   static boolean isOn = true;
-  boolean hourButtonDown = digitalRead(HOUR_ADJUSTMENT_PIN);
-  boolean minuteButtonDown = digitalRead(MINUTE_ADJUSTMENT_PIN);
-  while(digitalRead(HOUR_ADJUSTMENT_PIN) == HIGH || digitalRead(MINUTE_ADJUSTMENT_PIN) == HIGH);
+  boolean timeButtonDown = digitalRead(TIME_ADJUSTMENT_PIN);
+  while(digitalRead(TIME_ADJUSTMENT_PIN) == HIGH);
 
-  if (minuteButtonDown) {
-    minutes = (++minutes) % 60;
-    showTime(hours, minutes);
+  if (timeButtonDown) {
+    if (state == SET_TIME_HOUR) {
+      hours = (++hours) % 24;
+    } else {
+      minutes = (++minutes) % 60;
+    }
+    showTime(alarmHour, alarmMinute, true);
     lastFlashMillis = millis();
   }
 
-  if (hourButtonDown) {
-    hours = (++hours) % 24;
-    showTime(hours, minutes);
-    lastFlashMillis = millis();
-  }
-  
   // Set time on RTC
   rtc.adjust(DateTime(year(), month(), day(), hours, minutes, second()));
   setTime(hours, minutes, second(), day(), month(), year());
 
   if (abs(millis() - lastFlashMillis) > 500) {
     if (isOn) {
-      matrix.clear();
-      matrix.writeDisplay();
+      if (state == SET_TIME_HOUR) {
+        showTime(-1, minutes, false);
+      } else {
+        showTime(hours, -1, false);
+      }
       lastFlashMillis = millis();
       isOn = false;
     } else {
@@ -151,28 +157,28 @@ void setTimePoll() {
 void setAlarmPoll() {
   static long lastFlashMillis = millis();
   static boolean isOn = true;
-  boolean hourButtonDown = digitalRead(HOUR_ADJUSTMENT_PIN);
-  boolean minuteButtonDown = digitalRead(MINUTE_ADJUSTMENT_PIN);
-  while(digitalRead(HOUR_ADJUSTMENT_PIN) == HIGH || digitalRead(MINUTE_ADJUSTMENT_PIN) == HIGH);
+  boolean timeButtonDown = digitalRead(TIME_ADJUSTMENT_PIN);
+  while(digitalRead(TIME_ADJUSTMENT_PIN) == HIGH);
 
-  if (minuteButtonDown) {
-    alarmMinute = (++alarmMinute) % 60;
-    setAlarmTime();
-    showTime(alarmHour, alarmMinute, true);
-    lastFlashMillis = millis();
-  }
-
-  if (hourButtonDown) {
-    alarmHour = (++alarmHour) % 24;
-    setAlarmTime();
+  if (timeButtonDown) {
+    if (state == SET_ALARM_HOUR) {
+      alarmHour = (++alarmHour) % 24;
+      setAlarmTime();
+    } else {
+      alarmMinute = (++alarmMinute) % 60;
+      setAlarmTime();
+    }
     showTime(alarmHour, alarmMinute, true);
     lastFlashMillis = millis();
   }
 
   if (abs(millis() - lastFlashMillis) > 500) {
     if (isOn) {
-      matrix.clear();
-      showColon(true);
+      if (state == SET_ALARM_HOUR) {
+        showTime(-1, alarmMinute, true);
+      } else {
+        showTime(alarmHour, -1, true);
+      }
       lastFlashMillis = millis();
       isOn = false;
     } else {
@@ -202,10 +208,14 @@ void setAlarmTime() {
 
 void updateState() {
   if (state == SHOW_TIME) {
-    state = SET_TIME;
-  } else if (state == SET_TIME) {
-    state = SET_ALARM;
-  } else if (state = SET_ALARM) {
+    state = SET_TIME_HOUR;
+  } else if (state == SET_TIME_HOUR) {
+    state = SET_TIME_MINUTE;
+  } else if (state == SET_TIME_MINUTE) {
+    state = SET_ALARM_HOUR;
+  } else if (state == SET_ALARM_HOUR) {
+    state = SET_ALARM_MINUTE;
+  } else if (state == SET_ALARM_MINUTE) {
     EEPROM.update(0, alarmHour);
     EEPROM.update(1, alarmMinute);
     state = SHOW_TIME;
@@ -213,21 +223,18 @@ void updateState() {
 }
 
 void showTime(int hoursToShow, int minutesToShow, boolean colonToShow) {
-    showTime(hoursToShow, minutesToShow);
-    showColon(colonToShow);
-}
+  matrix.clear();
 
-void showColon(boolean colonToShow) {
-    matrix.drawColon(colonToShow);
-    matrix.writeDisplay();
-}
-
-void showTime(int hoursToShow, int minutesToShow) {
+  if (hoursToShow > -1) {
     matrix.writeDigitNum(0, hoursToShow / 10);
     matrix.writeDigitNum(1, hoursToShow % 10);
+  }
+  if (minutesToShow > -1) {
     matrix.writeDigitNum(3, minutesToShow / 10);
     matrix.writeDigitNum(4, minutesToShow % 10);
-    matrix.writeDisplay();
+  }
+  matrix.drawColon(colonToShow);
+  matrix.writeDisplay();
 }
 
 void changeMode() {
@@ -270,7 +277,10 @@ void setBrighter() {
 
 void beep() {
   static int count = 0;
-  if (count++ < alarmRepeats) {
+  if (count == 0) {
+    isSnoozPressed = false;
+  }
+  if (count++ < alarmRepeats && !isSnoozPressed) {
     Alarm.timerOnce(beepSeparation, beep); 
     // Turn on
     tone(BUZZER, beepFrequency, beepDuration);
@@ -279,5 +289,10 @@ void beep() {
     tone(BUZZER, beepFrequency, beepDuration);
   } else {
     count = 0;
+    isSnoozPressed = false;
   }
+}
+
+void snooze() {
+  isSnoozPressed = true;
 }
