@@ -14,5 +14,5 @@ Uses libraries:
 - [Adafruit_LEDBackpack](https://github.com/adafruit/Adafruit_LED_Backpack) (& [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library))
 
 To do:
-- Add snooze button
-- Add on/off button/switch
+- Make snooze button snooze alarm for 5 or 10 minutes instead of turning alarm off
+- Add on/off switch with LED for alarm
