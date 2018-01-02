@@ -19,12 +19,11 @@ enum State {
   SET_ALARM_MINUTE
 };
 
-boolean stateChanged = false;
-
 const int MODE_PIN = 2;
 const int SNOOZE_PIN = 3;
 const int TIME_ADJUSTMENT_PIN = 4;
 const int BUZZER = 5;
+const int ALARM_ON_OFF = 6;
 
 // 3 minutes
 const int secondsBetweenIncrements = 60 * 3;
@@ -41,7 +40,8 @@ unsigned int alarmHour = 0;
 unsigned int alarmMinute = 0;
 unsigned int alarmSecond = 0;
 
-boolean isSnoozPressed = false;
+unsigned int snoozeTime = 5 * 60;
+boolean isSnoozePressed = false;
 
 // Current time
 unsigned int hours;
@@ -52,13 +52,18 @@ RTC_DS3231 rtc;
 IRsend irTransmitter;
 Adafruit_7segment matrix = Adafruit_7segment();
 
-AlarmId alarmId;
+AlarmId alarmIdLight;
+AlarmId alarmIdBeep;
+
+boolean stateChanged = false;
 State state = SHOW_TIME;
 
 void setup() {
-  pinMode(13, OUTPUT);
+  pinMode(MODE_PIN, INPUT);
   pinMode(TIME_ADJUSTMENT_PIN, INPUT);
   pinMode(SNOOZE_PIN, INPUT);
+  pinMode(ALARM_ON_OFF, INPUT);
+  pinMode(BUZZER, OUTPUT);
 
   matrix.begin(0x70);
   matrix.setBrightness(0);
@@ -89,6 +94,8 @@ void setup() {
 }
 
 void loop() {
+  // Check if alarm state has been changed
+  
   if (stateChanged) {
     stateChanged = false;
     updateState();
@@ -202,8 +209,10 @@ void setAlarmTime() {
     hoursForAlarm += 24;
   }
   
-  Alarm.free(alarmId);
-  alarmId = Alarm.alarmRepeat(hoursForAlarm, minutesForAlarm, alarmSecond, turnOnRed);
+  Alarm.free(alarmIdLight);
+  Alarm.free(alarmIdBeep);
+  alarmIdLight = Alarm.alarmRepeat(hoursForAlarm, minutesForAlarm, alarmSecond, turnOnRed);
+  alarmIdBeep = Alarm.alarmRepeat(alarmHour, alarmMinute, alarmSecond, beep);
 }
 
 void updateState() {
@@ -246,12 +255,15 @@ void changeMode() {
 }
 
 void turnOnRed() {
-  Alarm.timerOnce(secondsBetweenIncrements, setOrange); 
-  // Turn on
-  irTransmitter.send(NEC, 0xff02fd, 0);
-  
-  // Set red
-  irTransmitter.send(NEC, 0xff1ae5, 0);
+  // If alarm switch is on
+  if (digitalRead(ALARM_ON_OFF) == HIGH) {
+    Alarm.timerOnce(secondsBetweenIncrements, setOrange); 
+    // Turn on
+    irTransmitter.send(NEC, 0xff02fd, 0);
+    
+    // Set red
+    irTransmitter.send(NEC, 0xff1ae5, 0);
+  }
 }
 
 void setOrange() {
@@ -271,28 +283,32 @@ void setBrighter() {
     irTransmitter.send(NEC, 0xff3ac5, 0);
   } else {
     brightnessCount = 0;
-    Alarm.timerOnce(secondsBetweenIncrements, beep);
   }
 }
 
 void beep() {
   static int count = 0;
   if (count == 0) {
-    isSnoozPressed = false;
+    isSnoozePressed = false;
   }
-  if (count++ < alarmRepeats && !isSnoozPressed) {
-    Alarm.timerOnce(beepSeparation, beep); 
-    // Turn on
-    tone(BUZZER, beepFrequency, beepDuration);
-    Alarm.delay(beepDuration);
-    Alarm.delay(beepGap);
-    tone(BUZZER, beepFrequency, beepDuration);
+  // If alarm switch is on
+  if (digitalRead(ALARM_ON_OFF) == HIGH) {
+    if (count++ < alarmRepeats && !isSnoozePressed) {
+      Alarm.timerOnce(beepSeparation, beep); 
+      // Turn on
+      tone(BUZZER, beepFrequency, beepDuration);
+      Alarm.delay(beepDuration);
+      Alarm.delay(beepGap);
+      tone(BUZZER, beepFrequency, beepDuration);
+    } else {
+      count = 0;
+      Alarm.timerOnce(snoozeTime, beep); 
+    }
   } else {
     count = 0;
-    isSnoozPressed = false;
   }
 }
 
 void snooze() {
-  isSnoozPressed = true;
+  isSnoozePressed = true;
 }
