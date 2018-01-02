@@ -6,6 +6,9 @@ Required hardware:
 - DS3231 RTC (Real Time Clock)
 - HT16K33 4 digit seven segment display
 - 3x momentary push buttons (with 10Kohm resistor each)
+- Toggle switch
+- LED alarm incator
+- Piezo buzzer
 
 Uses libraries:
 - [RCTLib](https://github.com/adafruit/RTClib)
@@ -14,5 +17,5 @@ Uses libraries:
 - [Adafruit_LEDBackpack](https://github.com/adafruit/Adafruit_LED_Backpack) (& [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library))
 
 To do:
-- Make snooze button snooze alarm for 5 or 10 minutes instead of turning alarm off
-- Add on/off switch with LED for alarm
+- Refactor into alarm clock class with a 7 segment diaply and buttons to configure
+  - Change to use rotary encoder and LCD screen
