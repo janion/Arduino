@@ -1,12 +1,16 @@
 # LED Clock
 
 Required hardware:
-- Arduino (Nano used but any ATtiny328 will work)
-- 2N2222  transistor ofr IR LED (with 470ohm resistor on base)
+- Arduino (Nano used but any ATmega328 will work)
+- 2N2222  transistor for IR LED (with 470ohm resistor on base)
 - DS3231 RTC (Real Time Clock)
 - HT16K33 4 digit seven segment display
 - 3x momentary push buttons (with 10Kohm resistor each)
+- 3x 10kohm resistor
+- 470ohm resistor
+- 1kohm resistor
 - Toggle switch
+- IR LED
 - LED alarm incator
 - Piezo buzzer
 
@@ -17,5 +21,6 @@ Uses libraries:
 - [Adafruit_LEDBackpack](https://github.com/adafruit/Adafruit_LED_Backpack) (& [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library))
 
 To do:
+- Fix 3 minute delay on buzzer
 - Refactor into alarm clock class with a 7 segment diaply and buttons to configure
   - Change to use rotary encoder and LCD screen
