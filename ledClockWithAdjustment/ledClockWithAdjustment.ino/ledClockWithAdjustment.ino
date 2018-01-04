@@ -20,8 +20,8 @@ enum State {
 };
 
 const int MODE_PIN = 2;
-const int SNOOZE_PIN = 3;
-const int TIME_ADJUSTMENT_PIN = 4;
+const int SNOOZE_PIN = 7;
+const int TIME_ADJUSTMENT_PIN = 8;
 const int BUZZER = 5;
 const int ALARM_ON_OFF = 6;
 
@@ -54,62 +54,10 @@ Adafruit_7segment matrix = Adafruit_7segment();
 
 AlarmId alarmIdLight;
 AlarmId alarmIdBeep;
+AlarmId alarmIdSnooze;
 
 boolean stateChanged = false;
 State state = SHOW_TIME;
-
-void setup() {
-  pinMode(MODE_PIN, INPUT);
-  pinMode(TIME_ADJUSTMENT_PIN, INPUT);
-  pinMode(SNOOZE_PIN, INPUT);
-  pinMode(ALARM_ON_OFF, INPUT);
-  pinMode(BUZZER, OUTPUT);
-
-  matrix.begin(0x70);
-  matrix.setBrightness(0);
-
-  if (! rtc.begin()) {
-    while (1);
-  }
-
-  if (rtc.lostPower()) {
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    return;
-  }
-  
-  // Set time on time library
-  DateTime now = rtc.now();
-  setTime(now.hour(), now.minute(), now.second(), now.day(), now.month(), now.year());
-
-  alarmHour = EEPROM.read(0);
-  alarmMinute = EEPROM.read(1);
-  
-  setAlarmTime();
-
-  // Mode change button
-  attachInterrupt(digitalPinToInterrupt(MODE_PIN), changeMode, RISING);
-  // Snooze Button
-  attachInterrupt(digitalPinToInterrupt(SNOOZE_PIN), snooze, RISING);
-}
-
-void loop() {
-  // Check if alarm state has been changed
-  
-  if (stateChanged) {
-    stateChanged = false;
-    updateState();
-  }
-  
-  if (state == SHOW_TIME) {
-    showTimePoll();
-  } else if (state == SET_TIME_HOUR || state == SET_TIME_MINUTE) {
-    setTimePoll();
-  } else if (state == SET_ALARM_HOUR || state == SET_ALARM_MINUTE) {
-    setAlarmPoll();
-  }
-  Alarm.delay(1);
-}
 
 void showTimePoll() {
   static boolean colon;
@@ -136,7 +84,7 @@ void setTimePoll() {
     } else {
       minutes = (++minutes) % 60;
     }
-    showTime(alarmHour, alarmMinute, true);
+    showTime(hours, minutes, true);
     lastFlashMillis = millis();
   }
 
@@ -302,7 +250,7 @@ void beep() {
       tone(BUZZER, beepFrequency, beepDuration);
     } else {
       count = 0;
-      Alarm.timerOnce(snoozeTime, beep); 
+      alarmIdSnooze = Alarm.timerOnce(snoozeTime, beep); 
     }
   } else {
     count = 0;
@@ -311,4 +259,74 @@ void beep() {
 
 void snooze() {
   isSnoozePressed = true;
+}
+
+void setup() {
+  pinMode(MODE_PIN, INPUT);
+  pinMode(TIME_ADJUSTMENT_PIN, INPUT);
+  pinMode(SNOOZE_PIN, INPUT);
+  pinMode(ALARM_ON_OFF, INPUT);
+  pinMode(BUZZER, OUTPUT);
+
+  matrix.begin(0x70);
+  matrix.setBrightness(0);
+
+  if (! rtc.begin()) {
+    while (1);
+  }
+
+  if (rtc.lostPower()) {
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    return;
+  }
+  
+  // Set time on time library
+  DateTime now = rtc.now();
+  setTime(now.hour(), now.minute(), now.second(), now.day(), now.month(), now.year());
+
+  alarmHour = EEPROM.read(0);
+  alarmMinute = EEPROM.read(1);
+  
+  setAlarmTime();
+
+//  // Mode change button
+//  attachInterrupt(digitalPinToInterrupt(MODE_PIN), changeMode, RISING);
+//  // Snooze Button
+//  attachInterrupt(digitalPinToInterrupt(SNOOZE_PIN), snooze, RISING);
+}
+
+void loop() {
+  if (stateChanged) {
+    stateChanged = false;
+    updateState();
+  }
+  
+  // If alarm switch is off
+  if (digitalRead(ALARM_ON_OFF) == LOW) {
+    Alarm.free(alarmIdSnooze);
+  }
+  
+  // If alarm is snoozed
+  if (digitalRead(SNOOZE_PIN) == HIGH) {
+    while(digitalRead(SNOOZE_PIN) == HIGH);
+    delay(100);
+    isSnoozePressed = true;
+  }
+  
+  // If mode is changed
+  if (digitalRead(MODE_PIN) == HIGH) {
+    while(digitalRead(MODE_PIN) == HIGH);
+    delay(100);
+    stateChanged = true;
+  }
+  
+  if (state == SHOW_TIME) {
+    showTimePoll();
+  } else if (state == SET_TIME_HOUR || state == SET_TIME_MINUTE) {
+    setTimePoll();
+  } else if (state == SET_ALARM_HOUR || state == SET_ALARM_MINUTE) {
+    setAlarmPoll();
+  }
+  Alarm.delay(1);
 }
