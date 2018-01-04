@@ -21,6 +21,5 @@ Uses libraries:
 - [Adafruit_LEDBackpack](https://github.com/adafruit/Adafruit_LED_Backpack) (& [Adafruit_GFX](https://github.com/adafruit/Adafruit-GFX-Library))
 
 To do:
-- Fix 3 minute delay on buzzer
 - Refactor into alarm clock class with a 7 segment diaply and buttons to configure
   - Change to use rotary encoder and LCD screen
