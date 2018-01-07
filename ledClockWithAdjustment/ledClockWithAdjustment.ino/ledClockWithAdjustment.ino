@@ -215,18 +215,24 @@ void turnOnRed() {
 }
 
 void setOrange() {
-  Alarm.timerOnce(secondsBetweenIncrements, setYellow);
-  irTransmitter.send(NEC, 0xff2ad5, 0);
+  // If alarm switch is on
+  if (digitalRead(ALARM_ON_OFF) == HIGH) {
+    Alarm.timerOnce(secondsBetweenIncrements, setYellow);
+    irTransmitter.send(NEC, 0xff2ad5, 0);
+  }
 }
 
 void setYellow() {
-  Alarm.timerOnce(secondsBetweenIncrements, setBrighter);
-  irTransmitter.send(NEC, 0xff0af5, 0);
+  // If alarm switch is on
+  if (digitalRead(ALARM_ON_OFF) == HIGH) {
+    Alarm.timerOnce(secondsBetweenIncrements, setBrighter);
+    irTransmitter.send(NEC, 0xff0af5, 0);
+  }
 }
 
 void setBrighter() {
   static int brightnessCount = 0;
-  if (brightnessCount++ < 7) {
+  if (brightnessCount++ < 7 && digitalRead(ALARM_ON_OFF) == HIGH) {
     Alarm.timerOnce(secondsBetweenIncrements, setBrighter);
     irTransmitter.send(NEC, 0xff3ac5, 0);
   } else {
@@ -289,11 +295,6 @@ void setup() {
   alarmMinute = EEPROM.read(1);
   
   setAlarmTime();
-
-//  // Mode change button
-//  attachInterrupt(digitalPinToInterrupt(MODE_PIN), changeMode, RISING);
-//  // Snooze Button
-//  attachInterrupt(digitalPinToInterrupt(SNOOZE_PIN), snooze, RISING);
 }
 
 void loop() {
